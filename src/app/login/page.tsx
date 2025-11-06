@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
 export default function AuthPage() {
     const [mode, setMode] = useState<"login" | "register">("login");
@@ -9,6 +10,11 @@ export default function AuthPage() {
     const [confirmPassword, setConfirmPassword] = useState("");
     const [message, setMessage] = useState("");
     const [loading, setLoading] = useState(false);
+    const router = useRouter();
+
+    function goToSearch() {
+        router.push("/search"); // ✅ ไปหน้า /search
+    }
 
     // 🔹 state สำหรับ OTP popup
     const [showOTP, setShowOTP] = useState(false);
@@ -82,6 +88,7 @@ export default function AuthPage() {
             if (res.ok) {
                 setMessage("🎉 ยืนยัน OTP สำเร็จ! เข้าสู่ระบบเรียบร้อยแล้ว");
                 setShowOTP(false);
+                goToSearch();
             } else {
                 setMessage(data.error || "❌ OTP ไม่ถูกต้อง");
             }
@@ -133,8 +140,8 @@ export default function AuthPage() {
                         type="submit"
                         disabled={loading}
                         className={`w-full py-2 rounded-lg text-white ${mode === "login"
-                                ? "bg-blue-600 hover:bg-blue-700"
-                                : "bg-green-600 hover:bg-green-700"
+                            ? "bg-blue-600 hover:bg-blue-700"
+                            : "bg-green-600 hover:bg-green-700"
                             } disabled:opacity-50`}
                     >
                         {loading ? "กำลังดำเนินการ..." : mode === "login" ? "เข้าสู่ระบบ" : "สมัครสมาชิก"}
