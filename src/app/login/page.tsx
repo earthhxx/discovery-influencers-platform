@@ -88,7 +88,7 @@ export default function AuthPage() {
             if (res.ok) {
                 setMessage("🎉 ยืนยัน OTP สำเร็จ! เข้าสู่ระบบเรียบร้อยแล้ว");
                 setShowOTP(false);
-                goToSearch();
+                window.location.href = "/";
             } else {
                 setMessage(data.error || "❌ OTP ไม่ถูกต้อง");
             }

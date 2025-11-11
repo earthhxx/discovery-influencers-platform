@@ -1,3 +1,4 @@
+// discovery-influencers-platform/src/app/api/session/route.ts
 import { NextResponse } from "next/server";
 import { getMainConnection } from "@/lib/db";
 

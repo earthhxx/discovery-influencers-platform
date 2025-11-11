@@ -34,6 +34,9 @@ export default function Sidebar() {
     const hasPermission = (perm: string) =>
         session?.permissions?.includes(perm);
 
+    const hasRole = (perm: string) =>
+        session?.roles?.includes(perm);
+
     // หน้า React / Client Component
     async function handleLogout() {
         await fetch("/api/logout", { method: "POST" });
@@ -67,30 +70,21 @@ export default function Sidebar() {
                     active={pathname === "/"}
                     collapsed={collapsed}
                 />
-                {hasPermission("manage_users") && (
+                {hasRole("influencer") && (
                     <SidebarItem
                         icon={<Users size={18} />}
-                        label="จัดการผู้ใช้"
-                        href="/users"
-                        active={pathname.startsWith("/users")}
+                        label="ตั้งค่าผู้ใช้"
+                        href="/user/edit"
+                        active={pathname.startsWith("/user")}
                         collapsed={collapsed}
                     />
                 )}
-                {hasPermission("view_roles") && (
+                {hasPermission("search") && (
                     <SidebarItem
                         icon={<Shield size={18} />}
-                        label="สิทธิ์การเข้าถึง"
-                        href="/roles"
-                        active={pathname.startsWith("/roles")}
-                        collapsed={collapsed}
-                    />
-                )}
-                {hasPermission("settings_access") && (
-                    <SidebarItem
-                        icon={<Settings size={18} />}
-                        label="ตั้งค่า"
-                        href="/settings"
-                        active={pathname.startsWith("/settings")}
+                        label="ค้นหา influencer"
+                        href="/search"
+                        active={pathname.startsWith("/search")}
                         collapsed={collapsed}
                     />
                 )}
