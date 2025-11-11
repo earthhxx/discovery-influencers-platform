@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { Influencer } from "../model/influencer";
+import { UserSession } from "../model/users";
+import InfluencerForm from "./components/InfluencerForm";
 
 export default function SearchPage() {
     const [influencers, setInfluencers] = useState<Influencer[]>([]);
@@ -11,6 +13,54 @@ export default function SearchPage() {
     const [platform, setPlatform] = useState("");
     const [category, setCategory] = useState("");
     const [loading, setLoading] = useState(true);
+    const [session, setSession] = useState<UserSession | null>(null);
+    const [selectedInfluencer, setSelectedInfluencer] = useState<Influencer | null>(null);
+    const [saving, setSaving] = useState(false);
+
+    const handleSave = async (updated: Influencer) => {
+        setSaving(true);
+        try {
+            const res = await fetch("/api/selectdata/update_rec", {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(updated),
+            });
+            const data = await res.json();
+            if (data.error) {
+                alert(data.error);
+            } else {
+                alert("บันทึกข้อมูลเรียบร้อย");
+                fetchSession();
+            }
+        } catch (err) {
+            console.error("Save error:", err);
+            alert("เกิดข้อผิดพลาดในการบันทึกข้อมูล");
+        }
+        setSaving(false);
+    };
+
+    const fetchSession = async () => {
+        try {
+            const res = await fetch("/api/session");
+            if (res.ok) {
+                const data = await res.json();
+                setSession(data);
+            }
+        } catch (err) {
+            console.error("Session fetch error:", err);
+        }
+    };
+
+    useEffect(() => {
+        fetchSession();
+    }, []);
+
+    const hasPermission = (perm: string) =>
+        session?.permissions?.includes(perm);
+
+    // const hasRole = (perm: string) =>
+    //     session?.roles?.includes(perm);
+
 
     useEffect(() => {
         const fetchInfluencers = async () => {
@@ -32,27 +82,16 @@ export default function SearchPage() {
     // ฟิลเตอร์เมื่อค่า search หรือ filter เปลี่ยน
     useEffect(() => {
         const filteredData = influencers.filter((inf) => {
-            const matchName =
-                inf.full_name?.toLowerCase().includes(search.toLowerCase()) ?? false;
-
-            const matchCountry =
-                !country ||
-                inf.country?.toLowerCase().includes(country.toLowerCase());
-
-            const matchPlatform =
-                !platform ||
-                inf.primary_platform?.toLowerCase().includes(platform.toLowerCase());
-
-            const matchCategory =
-                !category ||
-                inf.influencer_category?.toLowerCase().includes(category.toLowerCase());
+            const matchName = (inf.full_name ?? "").toLowerCase().includes(search.toLowerCase());
+            const matchCountry = !country || (inf.country ?? "").toLowerCase().includes(country.toLowerCase());
+            const matchPlatform = !platform || (inf.primary_platform ?? "").toLowerCase().includes(platform.toLowerCase());
+            const matchCategory = !category || (inf.influencer_category ?? "").toLowerCase().includes(category.toLowerCase());
 
             return matchName && matchCountry && matchPlatform && matchCategory;
         });
 
         setFiltered(filteredData);
     }, [search, country, platform, category, influencers]);
-
 
     if (loading)
         return (
@@ -100,6 +139,20 @@ export default function SearchPage() {
                     />
                 </div>
 
+                {selectedInfluencer && (
+                    <div className="fixed inset-0 backdrop-blur-2xl bg-opacity-50 flex justify-center items-center z-48 p-4">
+                        <div className="bg-white p-6 rounded shadow-md w-full max-w-6xl overflow-y-auto max-h-[90vh]">
+                            <h2 className="text-xl font-semibold mb-4">แก้ไข Influencer</h2>
+                            <InfluencerForm
+                                influencer={selectedInfluencer}
+                                onSubmit={handleSave}
+                                onCancel={() => setSelectedInfluencer(null)}
+                                saving={saving}
+                            />
+                        </div>
+                    </div>
+                )}
+
                 {/* ตารางผลลัพธ์ */}
                 <div className="overflow-x-auto bg-white shadow-md rounded-lg h-[80vh]">
                     <table className="min-w-full border text-sm">
@@ -131,6 +184,8 @@ export default function SearchPage() {
                                 <th className="p-2 border">ภาษา</th>
                                 <th className="p-2 border">Portfolio</th>
                                 <th className="p-2 border">วันที่ติดต่อครั้งสุดท้าย</th>
+                                <th className={`p-2 border ${hasPermission('s_edit') ? '' : 'hidden'}`}>edit</th>
+                                <th className={`p-2 border ${hasPermission('s_delete') ? '' : 'hidden'}`}>delete</th>
                             </tr>
                         </thead>
 
@@ -140,7 +195,7 @@ export default function SearchPage() {
                                     <tr key={inf.record_id} className="hover:bg-gray-50">
                                         <td className="p-2 border">{inf.record_id}</td>
                                         <td className="p-2 border">{inf.record_type || "-"}</td>
-                                        <td className="p-2 border">{inf.full_name}</td>
+                                        <td className="p-2 border">{inf.full_name ?? "no name"}</td>
                                         <td className="p-2 border">{inf.preferred_name || "-"}</td>
                                         <td className="p-2 border text-center">{inf.gender || "-"}</td>
                                         <td className="p-2 border">{inf.birth_date || "-"}</td>
@@ -178,7 +233,7 @@ export default function SearchPage() {
                                                     href={inf.portfolio_url}
                                                     target="_blank"
                                                     rel="noopener noreferrer"
-                                                    className="text-blue-500 underline"
+                                                    className={`text-blue-500 underline `}
                                                 >
                                                     เปิดลิงก์
                                                 </a>
@@ -187,6 +242,47 @@ export default function SearchPage() {
                                             )}
                                         </td>
                                         <td className="p-2 border">{inf.last_contact_date || "-"}</td>
+                                        <td className="p-2 border text-center">
+                                            <button
+                                                onClick={() => {
+                                                    setSelectedInfluencer(inf);
+                                                }}
+                                                className={`text-green-600 underline ${hasPermission('s_edit') ? '' : 'hidden'}`}
+                                            >
+                                                แก้ไข
+                                            </button>
+                                        </td>
+
+                                        <td className="p-2 border text-center">
+                                            <button
+                                                onClick={async () => {
+                                                    if (!confirm("คุณต้องการลบ Influencer คนนี้หรือไม่?")) return;
+
+                                                    try {
+                                                        const res = await fetch("/api/selectdata/delete_rec", {
+                                                            method: "DELETE",
+                                                            headers: { "Content-Type": "application/json" },
+                                                            body: JSON.stringify({ record_id: inf.record_id }),
+                                                        });
+
+                                                        if (!res.ok) throw new Error("ลบไม่สำเร็จ");
+
+                                                        // อัปเดต UI หลังลบ
+                                                        setFiltered(prev => prev.filter(i => i.record_id !== inf.record_id));
+                                                        setInfluencers(prev => prev.filter(i => i.record_id !== inf.record_id));
+
+                                                        alert("ลบเรียบร้อยแล้ว");
+                                                    } catch (err) {
+                                                        console.error(err);
+                                                        alert("เกิดข้อผิดพลาดในการลบ");
+                                                    }
+                                                }}
+                                                className={`text-red-600 underline ${hasPermission('s_delete') ? '' : 'hidden'}`}
+                                            >
+                                                ลบ
+                                            </button>
+                                        </td>
+
                                     </tr>
                                 ))
                             ) : (
@@ -200,6 +296,6 @@ export default function SearchPage() {
                     </table>
                 </div>
             </div>
-        </div>
+        </div >
     );
 }

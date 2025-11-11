@@ -4,12 +4,7 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Home, Users, Shield, Settings, LogOut, Menu } from "lucide-react";
-
-interface UserSession {
-    email: string;
-    roles: string[];
-    permissions: string[];
-}
+import { UserSession } from "../model/users";
 
 export default function Sidebar() {
     const [collapsed, setCollapsed] = useState(false);
@@ -45,7 +40,7 @@ export default function Sidebar() {
 
     return (
         <aside
-            className={`fixed h-screen bg-gray-900 text-gray-100 flex flex-col transition-all duration-300
+            className={`fixed h-screen bg-gray-900 text-gray-100 flex flex-col transition-all duration-300 z-50
         ${collapsed ? "w-16" : "w-64"}`}
         >
             {/* Header */}
